@@ -78,9 +78,11 @@ def run_swebench_eval(run_config: dict, preds_path: Path, run_dir: Path) -> Path
     eval_dir = run_dir / "run-eval"
     eval_dir.mkdir(parents=True, exist_ok=True)
 
+    venv_python = PROJECT_ROOT / ".venv" / "bin" / "python"
+
     subprocess.run(
         [
-            "python", "-m", "swebench.harness.run_evaluation",
+            str(venv_python), "-m", "swebench.harness.run_evaluation",
             "--dataset_name", "princeton-nlp/SWE-bench_Verified",
             "--predictions_path", str(preds_path),
             "--max_workers", str(run_config["workers"]),
