@@ -8,13 +8,13 @@ x-airflow-common: &airflow-common
     - "987"  # docker group GID on this host — grants airflow user access to /var/run/docker.sock
   environment:
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-    AIRFLOW__CORE__FERNET_KEY: 'ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg='
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:-airflow}@postgres:5432/${POSTGRES_DB:-airflow}
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:-ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg=}
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__LOGGING__LOGGING_LEVEL: 'INFO'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
-    AIRFLOW__WEBSERVER__SECRET_KEY: 'changeme'
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY:-changeme}
     MLFLOW_TRACKING_URI: http://mlflow:5000
     NEBIUS_API_KEY: ${NEBIUS_API_KEY}
   volumes:
@@ -41,9 +41,9 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
+      POSTGRES_USER: ${POSTGRES_USER:-airflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
+      POSTGRES_DB: ${POSTGRES_DB:-airflow}
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./docker/init-mlflow-db.sql:/docker-entrypoint-initdb.d/init-mlflow-db.sql
@@ -66,7 +66,7 @@ services:
       - mlflow
       - server
       - --backend-store-uri
-      - postgresql+psycopg2://airflow:airflow@postgres:5432/mlflow
+      - postgresql+psycopg2://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:-airflow}@postgres:5432/mlflow
       - --default-artifact-root
       - /mlflow/artifacts
       - --host
