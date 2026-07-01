@@ -2,6 +2,7 @@ import os
 import json
 import subprocess
 import uuid
+from datetime import datetime
 from pathlib import Path
 
 
@@ -132,6 +133,33 @@ def collect_metrics(run_config: dict, eval_dir: Path) -> dict:
         "empty_patch_rate":      results["empty_patch_instances"] / submitted if submitted > 0 else 0.0,
         "resolved_of_completed": results["resolved_instances"]    / completed if completed > 0 else 0.0,
     }
+
+
+def write_manifest(run_config: dict, eval_dir: Path, artifact_uri: str | None = None) -> Path:
+    """
+    Write manifest.json to the run directory.
+    Records all important file paths and the remote artifact URI if available.
+    Returns the path to manifest.json.
+    """
+    run_dir = get_run_dir(run_config)
+    agent_dir = run_dir / "run-agent"
+
+    manifest = {
+        "run_id":       run_config["run_id"],
+        "created_at":   datetime.utcnow().isoformat(),
+        "config":       str(run_dir / "config.json"),
+        "predictions":  str(agent_dir / "preds.json"),
+        "trajectories": str(agent_dir),
+        "eval_dir":     str(eval_dir),
+        "metrics":      str(run_dir / "metrics.json"),
+        "artifact_uri": artifact_uri,
+    }
+
+    manifest_path = run_dir / "manifest.json"
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    return manifest_path
 
 
 def log_mlflow_run(run_config: dict, metrics: dict, artifact_uris: list[str]) -> None:

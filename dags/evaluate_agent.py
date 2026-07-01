@@ -9,13 +9,14 @@ from airflow.models.param import Param
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from pipeline.helpers import (  # noqa: E402
+from pipeline.helpers import (
     build_run_config,
     prepare_run_dir,
     run_agent_batch,
     run_swebench_eval,
     collect_metrics,
     log_mlflow_run,
+    write_manifest,
     get_run_dir,
 )
 
@@ -71,9 +72,12 @@ def evaluate_agent():
         with open(run_dir / "metrics.json", "w") as f:
             json.dump(metrics, f, indent=2)
 
+        manifest_path = write_manifest(run_config, eval_path)
+
         log_mlflow_run(run_config, metrics, [
             str(run_dir / "config.json"),
             str(run_dir / "metrics.json"),
+            str(manifest_path),
         ])
 
         return str(run_dir / "metrics.json")
