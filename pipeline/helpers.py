@@ -102,7 +102,12 @@ def collect_metrics(run_config: dict, eval_dir: Path) -> dict:
     Returns a dict of metrics ready for MLflow logging.
     """
     model_slug = run_config["model"].replace("/", "__")
-    results_file = eval_dir / f"{model_slug}.{run_config['split']}.json"
+
+    # filename pattern is <model_slug>.<hash>.json - find it dynamically
+    matches = list(eval_dir.glob(f"{model_slug}.*.json"))
+    if not matches:
+        raise FileNotFoundError(f"No results JSON found for model '{model_slug}' in {eval_dir}")
+    results_file = matches[0]
 
     with open(results_file, "r") as f:
         results = json.load(f)
