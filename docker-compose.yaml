@@ -1,12 +1,17 @@
-version: '3.8'
-
 x-airflow-common: &airflow-common
-  image: apache/airflow:2.9.1
+  build:
+    context: .
+    dockerfile: Dockerfile.airflow
+  image: mlops-airflow:latest
+  user: "${AIRFLOW_UID:-50000}:0"
+  group_add:
+    - "987"  # docker group GID on this host — grants airflow user access to /var/run/docker.sock
   environment:
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__FERNET_KEY: 'ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg='
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__LOGGING__LOGGING_LEVEL: 'INFO'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
     AIRFLOW__WEBSERVER__SECRET_KEY: 'changeme'
@@ -17,7 +22,7 @@ x-airflow-common: &airflow-common
     - ./pipeline:/opt/airflow/pipeline
     - ./scripts:/opt/airflow/scripts
     - ./runs:/opt/airflow/runs
-    - ./logs:/opt/airflow/logs
+    - airflow-logs:/opt/airflow/logs
     - /var/run/docker.sock:/var/run/docker.sock
   depends_on:
     postgres:
@@ -52,13 +57,7 @@ services:
   # ---------------------------------------------------------------------------
   mlflow:
     image: python:3.12-slim
-    command: >
-      bash -c "pip install mlflow psycopg2-binary --quiet &&
-               mlflow server
-               --backend-store-uri postgresql+psycopg2://airflow:airflow@postgres:5432/mlflow
-               --default-artifact-root /mlflow/artifacts
-               --host 0.0.0.0
-               --port 5000"
+    command: "bash -c 'pip install mlflow psycopg2-binary --quiet && mlflow server --backend-store-uri postgresql+psycopg2://airflow:airflow@postgres:5432/mlflow --default-artifact-root /mlflow/artifacts --host 0.0.0.0 --port 5000 --allowed-hosts *'"
     ports:
       - "5000:5000"
     volumes:
@@ -70,20 +69,33 @@ services:
       - mlops-net
 
   # ---------------------------------------------------------------------------
+  # Volumes init — fix permissions for Airflow user (uid 50000)
+  # ---------------------------------------------------------------------------
+  volumes-init:
+    image: busybox
+    user: root
+    command: >
+      sh -c "mkdir -p /opt/airflow/runs /opt/airflow/logs &&
+             chown -R 50000:0 /opt/airflow/runs /opt/airflow/logs &&
+             chmod -R 775 /opt/airflow/runs /opt/airflow/logs"
+    volumes:
+      - ./runs:/opt/airflow/runs
+      - airflow-logs:/opt/airflow/logs
+    networks:
+      - mlops-net
+
+  # ---------------------------------------------------------------------------
   # Airflow init — runs DB migrations and creates admin user
   # ---------------------------------------------------------------------------
   airflow-init:
     <<: *airflow-common
-    command: >
-      bash -c "airflow db migrate &&
-               airflow users create
-               --username admin
-               --password admin
-               --firstname Admin
-               --lastname User
-               --role Admin
-               --email admin@example.com"
+    command: bash -c "airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
     restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      volumes-init:
+        condition: service_completed_successfully
 
   # ---------------------------------------------------------------------------
   # Airflow webserver
@@ -118,6 +130,7 @@ services:
 volumes:
   postgres-data:
   mlflow-artifacts:
+  airflow-logs:
 
 networks:
   mlops-net:

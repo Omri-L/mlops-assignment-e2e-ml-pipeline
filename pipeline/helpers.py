@@ -1,6 +1,7 @@
 import os
 import json
 import subprocess
+import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -42,6 +43,9 @@ def run_agent_batch(run_config: dict, run_dir: Path) -> Path:
     Run mini-swe-agent on the configured task slice.
     Writes trajectories and preds.json to run_dir/run-agent/.
     Returns the path to preds.json.
+
+    UV_PROJECT_ENVIRONMENT is redirected to .venv-mini-extra so uv does not
+    touch the project's .venv (which is used by run_swebench_eval for swebench).
     """
     outputs_dir = run_dir / "run-agent"
     outputs_dir.mkdir(parents=True, exist_ok=True)
@@ -57,7 +61,12 @@ def run_agent_batch(run_config: dict, run_dir: Path) -> Path:
             "-o", str(outputs_dir),
         ],
         cwd=PROJECT_ROOT,
-        env={**os.environ, "MSWEA_COST_TRACKING": "ignore_errors"},
+        env={
+            **os.environ,
+            "MSWEA_COST_TRACKING": "ignore_errors",
+            # Keep uv's project venv separate so it doesn't clobber .venv
+            "UV_PROJECT_ENVIRONMENT": str(PROJECT_ROOT / ".venv-mini-extra"),
+        },
         check=True,
     )
 
@@ -75,15 +84,20 @@ def run_swebench_eval(run_config: dict, preds_path: Path, run_dir: Path) -> Path
     Run SWE-bench evaluation on preds.json.
     Writes logs and reports to run_dir/run-eval/.
     Returns the path to the eval output directory.
+
+    Uses the project .venv python if available (standalone/VM mode where swebench
+    lives in the project venv).  Falls back to sys.executable — the same interpreter
+    running Airflow — which in the Docker container has swebench installed globally.
     """
     eval_dir = run_dir / "run-eval"
     eval_dir.mkdir(parents=True, exist_ok=True)
 
     venv_python = PROJECT_ROOT / ".venv" / "bin" / "python"
+    python = str(venv_python) if venv_python.exists() else sys.executable
 
     subprocess.run(
         [
-            str(venv_python), "-m", "swebench.harness.run_evaluation",
+            python, "-m", "swebench.harness.run_evaluation",
             "--dataset_name", "princeton-nlp/SWE-bench_Verified",
             "--predictions_path", str(preds_path),
             "--max_workers", str(run_config["workers"]),
@@ -135,7 +149,7 @@ def collect_metrics(run_config: dict, eval_dir: Path) -> dict:
     }
 
 
-def write_manifest(run_config: dict, eval_dir: Path, artifact_uri: str | None = None) -> Path:
+def write_manifest(run_config: dict, eval_dir: Path, artifact_uri: str = None) -> Path:
     """
     Write manifest.json to the run directory.
     Records all important file paths and the remote artifact URI if available.
@@ -162,13 +176,11 @@ def write_manifest(run_config: dict, eval_dir: Path, artifact_uri: str | None = 
     return manifest_path
 
 
-def log_mlflow_run(run_config: dict, metrics: dict, artifact_uris: list[str]) -> None:
+def log_mlflow_run(run_config: dict, metrics: dict, artifact_uris: list) -> None:
     """
     Log params, metrics, and artifact references to MLflow.
     All artifacts are logged inside a single MLflow run.
     """
-    import sys
-    sys.path.insert(0, str(PROJECT_ROOT / ".venv" / "lib" / "python3.12" / "site-packages"))
     import mlflow
 
     with mlflow.start_run(run_name=run_config["run_id"]):

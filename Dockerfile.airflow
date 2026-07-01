@@ -1,0 +1,17 @@
+FROM apache/airflow:2.8.4-python3.10
+
+USER root
+
+# Install uv to /usr/local/bin so all users (including airflow) can run it
+RUN curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
+
+USER airflow
+
+# Install project Python dependencies
+COPY pyproject.toml uv.lock ./
+RUN pip install --no-cache-dir \
+    "requests==2.31.0" \
+    "email-validator>=2.0" \
+    mlflow \
+    swebench \
+    "mini-swe-agent>=2.4.1"
