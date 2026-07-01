@@ -1,6 +1,6 @@
 import sys
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from airflow.decorators import dag, task
 from airflow.models.param import Param
@@ -42,26 +42,42 @@ from pipeline.helpers import (
 )
 def evaluate_agent():
 
-    @task
+    @task(
+        retries=1,
+        retry_delay=timedelta(minutes=1),
+        execution_timeout=timedelta(minutes=2),
+    )
     def prepare_run(**context) -> dict:
         """Build config, create run directory, write config.json. Returns config dict."""
         run_config = build_run_config(context["params"])
         prepare_run_dir(run_config)
         return run_config
 
-    @task
+    @task(
+        retries=1,
+        retry_delay=timedelta(minutes=5),
+        execution_timeout=timedelta(hours=3),
+    )
     def run_agent(run_config: dict) -> str:
         """Run mini-swe-agent batch and write outputs to run-agent/. Returns preds.json path."""
         preds_path = run_agent_batch(run_config, get_run_dir(run_config))
         return str(preds_path)
 
-    @task
+    @task(
+        retries=2,
+        retry_delay=timedelta(minutes=2),
+        execution_timeout=timedelta(hours=1),
+    )
     def run_eval(run_config: dict, preds_path: str) -> str:
         """Run SWE-bench evaluation and write results to run-eval/. Returns eval dir path."""
         eval_dir = run_swebench_eval(run_config, Path(preds_path), get_run_dir(run_config))
         return str(eval_dir)
 
-    @task
+    @task(
+        retries=2,
+        retry_delay=timedelta(minutes=1),
+        execution_timeout=timedelta(minutes=10),
+    )
     def summarize_and_log(run_config: dict, eval_dir: str) -> str:
         """Parse metrics, write metrics.json, and log everything to MLflow."""
         run_dir = get_run_dir(run_config)
