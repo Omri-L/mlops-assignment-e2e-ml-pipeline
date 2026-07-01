@@ -24,8 +24,11 @@ x-airflow-common: &airflow-common
     - ./runs:/opt/airflow/runs
     - airflow-logs:/opt/airflow/logs
     - /var/run/docker.sock:/var/run/docker.sock
+    - mlflow-artifacts:/mlflow/artifacts
   depends_on:
     postgres:
+      condition: service_healthy
+    mlflow:
       condition: service_healthy
   networks:
     - mlops-net
@@ -56,12 +59,32 @@ services:
   # MLflow tracking server
   # ---------------------------------------------------------------------------
   mlflow:
-    image: python:3.12-slim
-    command: "bash -c 'pip install mlflow psycopg2-binary --quiet && mlflow server --backend-store-uri postgresql+psycopg2://airflow:airflow@postgres:5432/mlflow --default-artifact-root /mlflow/artifacts --host 0.0.0.0 --port 5000 --allowed-hosts *'"
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    command:
+      - mlflow
+      - server
+      - --backend-store-uri
+      - postgresql+psycopg2://airflow:airflow@postgres:5432/mlflow
+      - --default-artifact-root
+      - /mlflow/artifacts
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "5000"
+      - --allowed-hosts
+      - "*"
     ports:
       - "5000:5000"
     volumes:
       - mlflow-artifacts:/mlflow/artifacts
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,12 +98,13 @@ services:
     image: busybox
     user: root
     command: >
-      sh -c "mkdir -p /opt/airflow/runs /opt/airflow/logs &&
-             chown -R 50000:0 /opt/airflow/runs /opt/airflow/logs &&
-             chmod -R 775 /opt/airflow/runs /opt/airflow/logs"
+      sh -c "mkdir -p /opt/airflow/runs /opt/airflow/logs /mlflow/artifacts &&
+             chown -R 50000:0 /opt/airflow/runs /opt/airflow/logs /mlflow/artifacts &&
+             chmod -R 775 /opt/airflow/runs /opt/airflow/logs /mlflow/artifacts"
     volumes:
       - ./runs:/opt/airflow/runs
       - airflow-logs:/opt/airflow/logs
+      - mlflow-artifacts:/mlflow/artifacts
     networks:
       - mlops-net
 
