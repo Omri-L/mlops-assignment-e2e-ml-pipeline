@@ -139,6 +139,8 @@ def log_mlflow_run(run_config: dict, metrics: dict, artifact_uris: list[str]) ->
     Log params, metrics, and artifact references to MLflow.
     All artifacts are logged inside a single MLflow run.
     """
+    import sys
+    sys.path.insert(0, str(PROJECT_ROOT / ".venv" / "lib" / "python3.12" / "site-packages"))
     import mlflow
 
     with mlflow.start_run(run_name=run_config["run_id"]):
