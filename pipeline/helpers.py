@@ -53,7 +53,6 @@ def run_agent_batch(run_config: dict, run_dir: Path) -> Path:
             "--model", run_config["model"],
             "--slice", run_config["task_slice"],
             "--workers", str(run_config["workers"]),
-            "--cost-limit", run_config["cost_limit"],
             "-o", str(outputs_dir),
         ],
         cwd=PROJECT_ROOT,
