@@ -1,0 +1,10 @@
+{
+  "run_id": "419cb62d",
+  "created_at": "2026-07-01T18:19:39.114003",
+  "config": "/opt/airflow/runs/419cb62d/config.json",
+  "predictions": "/opt/airflow/runs/419cb62d/run-agent/preds.json",
+  "trajectories": "/opt/airflow/runs/419cb62d/run-agent",
+  "eval_dir": "/opt/airflow/runs/419cb62d/run-eval",
+  "metrics": "/opt/airflow/runs/419cb62d/metrics.json",
+  "artifact_uri": null
+}

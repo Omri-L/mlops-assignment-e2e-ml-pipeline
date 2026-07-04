@@ -1,0 +1,13 @@
+2026-07-01 18:15:22,573 - minisweagent - INFO - Loading dataset princeton-nlp/SWE-Bench_Verified, split test...
+2026-07-01 18:15:27,009 - minisweagent - INFO - Instance slice: 500 -> 3 instances
+2026-07-01 18:15:27,010 - minisweagent - INFO - Running on 3 instances...
+2026-07-01 18:15:27,010 - minisweagent - INFO - Building agent config from specs: ['/opt/airflow/.venv-mini-extra/lib/python3.14/site-packages/minisweagent/config/benchmarks/swebench.yaml']
+2026-07-01 18:15:29,799 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-89194672 -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.astropy_1776_astropy-12907:latest sleep 2h
+2026-07-01 18:15:29,800 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-53b865ad -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.astropy_1776_astropy-13236:latest sleep 2h
+2026-07-01 18:15:29,801 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-ebd22b81 -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.astropy_1776_astropy-13033:latest sleep 2h
+2026-07-01 18:15:30,279 - minisweagent.environment - INFO - Started container minisweagent-89194672 with ID 0be9ff365f7a89704a9d8d0567f3f50cf410eb04a5ac4176f5a05c42e27d26e7
+2026-07-01 18:15:30,293 - minisweagent.environment - INFO - Started container minisweagent-ebd22b81 with ID 0da37f5f8b7bea347598193636a58848a5ef3fde9952a1e3f80b306ef348ec25
+2026-07-01 18:15:30,302 - minisweagent.environment - INFO - Started container minisweagent-53b865ad with ID 7382c60756361af2d8549411c8b00ae8712d2346c76d5fc05334d777e10408f4
+2026-07-01 18:16:57,052 - minisweagent - INFO - Saved trajectory to '/opt/airflow/runs/419cb62d/run-agent/astropy__astropy-12907/astropy__astropy-12907.traj.json'
+2026-07-01 18:17:53,814 - minisweagent - INFO - Saved trajectory to '/opt/airflow/runs/419cb62d/run-agent/astropy__astropy-13033/astropy__astropy-13033.traj.json'
+2026-07-01 18:18:14,116 - minisweagent - INFO - Saved trajectory to '/opt/airflow/runs/419cb62d/run-agent/astropy__astropy-13236/astropy__astropy-13236.traj.json'

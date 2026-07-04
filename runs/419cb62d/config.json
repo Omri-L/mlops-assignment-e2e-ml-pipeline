@@ -1,0 +1,9 @@
+{
+  "model": "nebius/moonshotai/Kimi-K2.6",
+  "subset": "verified",
+  "split": "test",
+  "workers": 5,
+  "task_slice": "0:3",
+  "run_id": "419cb62d",
+  "cost_limit": "1.5"
+}
