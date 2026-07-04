@@ -171,6 +171,8 @@ To compare multiple runs, open MLflow → Default experiment → select runs →
 
 ## Completed Example Run
 
+Run ID: `419cb62d` — artifacts at `runs/419cb62d/`
+
 | Parameter | Value |
 |---|---|
 | Model | `nebius/moonshotai/Kimi-K2.6` |
@@ -178,12 +180,17 @@ To compare multiple runs, open MLflow → Default experiment → select runs →
 | Split | `test` |
 | Task slice | `0:3` (3 tasks) |
 | Workers | 5 |
+| Cost limit | 1.50 |
 
 | Metric | Value |
 |---|---|
-| `resolved_rate` | 0.6667 (2/3 tasks passed) |
+| `resolved_rate` | 0.6667 (2/3 tasks resolved) |
+| `completion_rate` | 1.0 (all 3 tasks completed) |
+| `error_rate` | 0.0 |
+| `empty_patch_rate` | 0.0 |
 | `submitted_instances` | 3 |
 | `resolved_instances` | 2 |
+| `unresolved_instances` | 1 |
 
 **Airflow DAG: a completed run:**
 
