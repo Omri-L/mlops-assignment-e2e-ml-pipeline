@@ -48,7 +48,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./docker/init-mlflow-db.sql:/docker-entrypoint-initdb.d/init-mlflow-db.sql
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-airflow}"]
       interval: 10s
       retries: 5
       start_period: 5s
